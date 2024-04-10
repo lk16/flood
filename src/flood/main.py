@@ -22,7 +22,7 @@ def solve() -> None:
         height: int = typer.Option(10, "-h", "--height"),
         colors: int = typer.Option(5, "-c", "--colors"),
         seed: Optional[int] = typer.Option(None, "-s", "--seed"),
-        delay: Optional[float] = typer.Option(None, "-d", "--delay"),
+        print_delay: Optional[float] = typer.Option(None, "-d", "--delay"),
     ) -> None:
         try:
             player_type = PLAYER_TYPES[player_name]
@@ -36,17 +36,24 @@ def solve() -> None:
             random.seed(seed)
 
         board = Board.random(height, width, colors)
+        board.print()
+        print()
+
+        moves: list[int] = []
         start_pos = (0, 0)
 
         while not board.is_solved():
-            board.print()
             move = player.get_best_move(board, start_pos, None, None)
+            moves.append(move)
             board = board.do_move(start_pos, move)
+            board.print()
+            print()
+            print(f"Moves ({len(moves)}): ", end="")
+            print(" ".join(board.get_printed_string_for_color(move) for move in moves))
+            print()
             print()
 
-            if delay is not None:
-                sleep(delay)
-
-        board.print()
+            if print_delay is not None:
+                sleep(print_delay)
 
     typer.run(command)

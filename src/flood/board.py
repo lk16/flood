@@ -61,16 +61,20 @@ class Board:
     def get_remaining_colors(self) -> set[int]:
         return set(self.__fields)
 
+    def get_printed_string_for_color(self, color: int) -> str:
+        try:
+            color_code = BASH_COLOR_CODES[color]
+        except IndexError:
+            return f"{color:>2}"
+
+        return f"\033[{color_code}m██\033[0m"
+
     def print(self) -> None:
         for y in range(self.get_row_count()):
             for x in range(self.get_column_count()):
                 color = self.get_color(x, y)
-                try:
-                    color_code = BASH_COLOR_CODES[color]
-                except IndexError:
-                    print(f"{color:>2}", end="")
-                else:
-                    print(f"\033[{color_code}m██\033[0m", end="")
+                printed = self.get_printed_string_for_color(color)
+                print(printed, end="")
             print()
 
     def get_flooded_cells(self, start_pos: tuple[int, int]) -> set[int]:
