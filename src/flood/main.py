@@ -1,4 +1,6 @@
-from typing import Type
+from time import sleep
+import random
+from typing import Optional, Type
 from flood.board import Board
 import typer
 
@@ -14,7 +16,14 @@ PLAYER_TYPES: dict[str, Type[BasePlayer]] = {
 
 
 def solve() -> None:
-    def command(player_name: str) -> None:
+    def command(
+        player_name: str,
+        width: int = typer.Option(10, "-w", "--width"),
+        height: int = typer.Option(10, "-h", "--height"),
+        colors: int = typer.Option(5, "-c", "--colors"),
+        seed: Optional[int] = typer.Option(None, "-s", "--seed"),
+        delay: Optional[float] = typer.Option(None, "-d", "--delay"),
+    ) -> None:
         try:
             player_type = PLAYER_TYPES[player_name]
         except KeyError:
@@ -23,7 +32,10 @@ def solve() -> None:
 
         player = player_type()
 
-        board = Board.random(8, 8, 4)  # TODO make these flags
+        if seed is not None:
+            random.seed(seed)
+
+        board = Board.random(height, width, colors)
         start_pos = (0, 0)
 
         while not board.is_solved():
@@ -31,6 +43,9 @@ def solve() -> None:
             move = player.get_best_move(board, start_pos, None, None)
             board = board.do_move(start_pos, move)
             print()
+
+            if delay is not None:
+                sleep(delay)
 
         board.print()
 
