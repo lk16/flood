@@ -11,10 +11,5 @@ class RandomPlayer(BasePlayer):
         opponent_start_pos: tuple[int, int] | None,
         timeout: float | None = None,
     ) -> int:
-        # Find any move that isn't played just before.
-        colors = board.get_remaining_colors()
-        current_color = board.get_color(*start_pos)
-        colors = colors - {current_color}
-
-        # Pick random color.
+        colors = board.get_valid_moves(start_pos, opponent_start_pos)
         return random.choice(list(colors))

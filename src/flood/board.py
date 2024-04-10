@@ -1,6 +1,7 @@
 from __future__ import annotations
 from copy import copy
 import random
+from typing import Optional
 
 BASH_COLOR_CODES = [
     "30",  # black
@@ -112,6 +113,10 @@ class Board:
 
         return {self.get_index(x, y) for x, y in explored}
 
+    def count_flooded_cells(self, start_pos: tuple[int, int]) -> int:
+        flooded = self.get_flooded_cells(start_pos)
+        return len(flooded)
+
     def do_move(self, start_pos: tuple[int, int], color: int) -> Board:
         flooded = self.get_flooded_cells(start_pos)
 
@@ -121,5 +126,19 @@ class Board:
 
         return Board(fields, self.get_row_count())
 
-    def is_game_over(self) -> bool:
+    def is_solved(self) -> bool:
+        # This applies to single player only.
         return len(self.get_remaining_colors()) == 1
+
+    def get_valid_moves(
+        self, start_pos: tuple[int, int], opponent_start_pos: Optional[tuple[int, int]]
+    ) -> set[int]:
+        colors = self.get_remaining_colors()
+        current_color = self.get_color(*start_pos)
+        colors = colors - {current_color}
+
+        if opponent_start_pos is not None:
+            opponent_color = self.get_color(*opponent_start_pos)
+            colors = colors - {opponent_color}
+
+        return colors
