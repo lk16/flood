@@ -54,7 +54,7 @@ class GraphSinglePlayerSolver:
         if self.attempts % 10000 == 0:
             self._print_speed()
 
-        valid_moves = set(self.graph.colors)
+        valid_moves = set(range(self.graph.color_count()))
         if moves:
             valid_moves -= {moves[-1]}
 

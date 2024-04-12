@@ -104,19 +104,18 @@ def print_node_neighbours(node_neighbours: list[set[int]]) -> None:
 
 class Graph:
     def __init__(self, colors: list[int], neighbours: list[set[int]]) -> None:
-        self.colors = colors
-
         # node id -> bitset of neighbour node ids
         self.neighbours: list[BitSet] = [
             BitSet.from_set(node_neighbours) for node_neighbours in neighbours
         ]
 
-        self.color_sets = [BitSet(0) for _ in range(max(self.colors) + 1)]
-        for index, color in enumerate(self.colors):
+        # color id -> bitset of node ids with that color
+        self.color_sets = [BitSet(0) for _ in range(max(colors) + 1)]
+        for index, color in enumerate(colors):
             self.color_sets[color] = BitSet(self.color_sets[color] | 1 << index)
 
     def node_count(self) -> int:
         return len(self.neighbours)
 
     def color_count(self) -> int:
-        return len(self.colors)
+        return len(self.color_sets)
