@@ -4,7 +4,7 @@ from flood.board import Board
 from flood.players.base import BasePlayer
 
 
-class KurtPlayer(BasePlayer):
+class PercentagePlayer(BasePlayer):
     def get_best_move(
         self,
         board: Board,

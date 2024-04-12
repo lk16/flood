@@ -6,14 +6,16 @@ import typer
 
 from flood.players.base import BasePlayer
 from flood.players.greedy import GreedyPlayer
-from flood.players.kurt import KurtPlayer
+from flood.players.percentage import PercentagePlayer
 from flood.players.random import RandomPlayer
+from flood.players.recursive import RecursivePlayer
 
 PLAYER_TYPES: dict[str, Type[BasePlayer]] = {
     # Please keep this sorted alphabetically
     "greedy": GreedyPlayer,
-    "kurt": KurtPlayer,
+    "percentage": PercentagePlayer,
     "random": RandomPlayer,
+    "recursive": RecursivePlayer,
 }
 
 
