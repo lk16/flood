@@ -61,7 +61,8 @@ class Board:
     def get_remaining_colors(self) -> set[int]:
         return set(self.__fields)
 
-    def get_printed_string_for_color(self, color: int) -> str:
+    @classmethod
+    def get_printed_string_for_color(cls, color: int) -> str:
         try:
             color_code = BASH_COLOR_CODES[color]
         except IndexError:

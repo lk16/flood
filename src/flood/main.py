@@ -5,11 +5,13 @@ from flood.board import Board
 import typer
 
 from flood.players.base import BasePlayer
+from flood.players.graph.player import GraphPlayer
 from flood.players.greedy import GreedyPlayer
 from flood.players.random import RandomPlayer
 
 PLAYER_TYPES: dict[str, Type[BasePlayer]] = {
     # Please keep this sorted alphabetically
+    "graph": GraphPlayer,
     "greedy": GreedyPlayer,
     "random": RandomPlayer,
 }
