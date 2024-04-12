@@ -119,3 +119,20 @@ class Graph:
 
     def color_count(self) -> int:
         return len(self.colors)
+
+    def get_color(self, node: int) -> int:
+        # This is slow and should not be used for searching
+
+        if node not in range(self.node_count()):
+            raise ValueError("Invalid node id")
+
+        for color, color_bitset in enumerate(self.colors):
+            if (1 << node) & color_bitset:
+                return color
+
+        # Unreachable
+        raise NotImplementedError
+
+    def get_neighbour_list(self, node: int) -> list[int]:
+        # This is slow and should not be used for searching
+        return [n for n in range(self.node_count()) if self.neighbours[node] & (1 << n)]

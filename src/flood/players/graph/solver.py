@@ -1,5 +1,11 @@
 from copy import copy
 import datetime
+import json
+import os
+
+from pathlib import Path
+import subprocess
+from typing import Optional
 from flood.board import Board
 from flood.players.graph.graph import Graph
 from flood.players.graph.types import BitSet, SolutionFound
@@ -74,11 +80,14 @@ class GraphSinglePlayerSolver:
             child_flooded = BitSet(flooded | newly_flooded)
             self._solve(child_flooded, copy(moves) + [move])
 
-    def solve(self) -> int:
+    def solve(self) -> list[int]:
+        if "FLOOD_GRAPH_PLAYER_USE_RUST" in os.environ:
+            return self._solve_with_rust()
+
         self.solve_start = datetime.datetime.now()
         self.attempts = 0
 
-        best_move = -1
+        best_moves: Optional[list[int]] = None
         self.max_moves = self.graph.node_count()
 
         while True:
@@ -98,9 +107,44 @@ class GraphSinglePlayerSolver:
                 print()
 
                 self.max_moves = len(solution.moves) - 1
-                best_move = solution.moves[0]
+                best_moves = copy(solution.moves)
             else:
                 break
 
-        assert best_move != -1
-        return best_move
+        assert best_moves is not None
+        return best_moves
+
+    def _solve_with_rust(self) -> list[int]:
+        executable = Path(__file__).parent / "target/release/graph"
+
+        if not executable.exists():
+            raise Exception(f"Rust executable was not found at {executable}")
+        node_ids = list(range(self.graph.node_count()))
+
+        arguments = {
+            "start": self.start_node_id,
+            "colors": [self.graph.get_color(node) for node in node_ids],
+            "neighbours": [self.graph.get_neighbour_list(node) for node in node_ids],
+        }
+
+        process = subprocess.Popen(
+            [executable, json.dumps(arguments)],
+            stdout=subprocess.PIPE,
+        )
+
+        assert process.stdout
+
+        while True:
+            raw_line = process.stdout.readline()
+            if raw_line == b"":
+                break
+
+            line = raw_line.decode()
+            print(line, end="")
+
+            if line.startswith("Solution:"):
+                solution = line.strip().split(" ")[1:]
+                return [int(move) for move in solution]
+
+        # Unreachable
+        raise NotImplementedError
