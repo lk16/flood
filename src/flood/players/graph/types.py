@@ -22,6 +22,5 @@ class BitSet(int):
         binary = bin(self)[2:]
         return {i for i, bit in enumerate(binary[::-1]) if bit == "1"}
 
-    # TODO consider removing
     def __iter__(self) -> Iterator[int]:
         return iter(self.to_set())

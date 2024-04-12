@@ -78,10 +78,8 @@ class GraphSinglePlayerSolver:
         self.solve_start = datetime.datetime.now()
         self.attempts = 0
 
-        # TODO Don't hardcode
-        self.max_moves = 80
-
         best_move = -1
+        self.max_moves = self.graph.node_count()
 
         while True:
             initial_flooded = BitSet(1 << self.start_node_id)
