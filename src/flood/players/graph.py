@@ -59,10 +59,10 @@ def print_node_colors(board: Board, node_colors: list[int]) -> None:
         print(f"{node_id:>2} -> {print_color_str}")
 
 
-def get_node_edges(board: Board, node_ids: list[int]) -> list[set[int]]:
+def get_node_neighbours(board: Board, node_ids: list[int]) -> list[set[int]]:
     node_count = max(node_ids) + 1
 
-    node_edges: list[set[int]] = [set() for _ in range(node_count)]
+    node_neighbours: list[set[int]] = [set() for _ in range(node_count)]
 
     cell_count = board.get_column_count() * board.get_row_count()
 
@@ -89,26 +89,28 @@ def get_node_edges(board: Board, node_ids: list[int]) -> list[set[int]]:
             neighbour_node_id = node_ids[neighbour_cell_id]
             assert neighbour_node_id is not None
             if neighbour_node_id != cell_node_id:
-                node_edges[cell_node_id].add(neighbour_node_id)
-                node_edges[neighbour_node_id].add(cell_node_id)
+                node_neighbours[cell_node_id].add(neighbour_node_id)
+                node_neighbours[neighbour_node_id].add(cell_node_id)
 
-    return node_edges
+    return node_neighbours
 
 
-def print_node_edges(node_edges: list[set[int]]) -> None:
-    for node_id, edges in enumerate(node_edges):
+def print_node_neighbours(node_neighbours: list[set[int]]) -> None:
+    for node_id, neighbours in enumerate(node_neighbours):
         print(
-            f"{node_id:>2} -> [" + ", ".join(str(edge) for edge in sorted(edges)) + "]"
+            f"{node_id:>2} -> ["
+            + ", ".join(str(neighbour) for neighbour in sorted(neighbours))
+            + "]"
         )
 
 
 class Graph:
-    def __init__(self, colors: list[int], edges: list[set[int]]) -> None:
+    def __init__(self, colors: list[int], neighbours: list[set[int]]) -> None:
         self.colors = colors
-        self.edges = edges
+        self.neighbours = neighbours
 
     def node_count(self) -> int:
-        return len(self.edges)
+        return len(self.neighbours)
 
     def color_count(self) -> int:
         return len(self.colors)
@@ -133,7 +135,7 @@ class GraphSinglePlayerSolver:
         newly_flooded: set[int] = set()
 
         for flooded_node in flooded:
-            for neighbour_node in self.graph.edges[flooded_node]:
+            for neighbour_node in self.graph.neighbours[flooded_node]:
                 if (
                     neighbour_node not in flooded
                     and self.graph.colors[neighbour_node] == move
@@ -224,14 +226,14 @@ class GraphPlayer(BasePlayer):
     def load_as_graph(self, board: Board) -> Graph:
         node_ids = get_node_ids(board)
         node_colors = get_node_colors(board, node_ids)
-        node_edges = get_node_edges(board, node_ids)
+        node_neighbours = get_node_neighbours(board, node_ids)
 
         if False:  # debug prints
             print_node_ids(board, node_ids)
             print_node_colors(board, node_colors)
-            print_node_edges(node_edges)
+            print_node_neighbours(node_neighbours)
 
-        return Graph(node_colors, node_edges)
+        return Graph(node_colors, node_neighbours)
 
     def get_best_move(
         self,
