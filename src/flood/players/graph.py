@@ -1,3 +1,4 @@
+from copy import copy
 from flood.board import Board
 from flood.players.base import BasePlayer
 
@@ -121,42 +122,44 @@ class GraphSinglePlayerSolver:
     def __init__(self, graph: Graph, start_node_id: int) -> None:
         self.graph = graph
         self.start_node_id = start_node_id
-
-        # current search
-        self.flooded: set[int] = set()
-        self.moves: list[int] = []
         self.max_moves = 0
 
-    def _get_newly_flooded(self, move: int) -> set[int]:
+    def _get_newly_flooded(self, flooded: set[int], move: int) -> set[int]:
         newly_flooded: set[int] = set()
 
-        for flooded_node in self.flooded:
+        for flooded_node in flooded:
             for neighbour_node in self.graph.edges[flooded_node]:
                 if (
-                    neighbour_node not in self.flooded
+                    neighbour_node not in flooded
                     and self.graph.colors[neighbour_node] == move
                 ):
                     newly_flooded.add(neighbour_node)
 
         return newly_flooded
 
-    def _solve(self) -> None:
-        if len(self.moves) > self.max_moves:
+    def _count_unflooded_colors(self, flooded: set[int]) -> int:
+        unflooded_nodes = set(range(self.graph.node_count())) - flooded
+        unflooded_colors = {self.graph.colors[node] for node in unflooded_nodes}
+        return len(unflooded_colors)
+
+    def _solve(self, flooded: set[int], moves: list[int]) -> None:
+        if len(moves) > self.max_moves:
             return
 
-        if len(self.flooded) == self.graph.node_count():
-            moves = self.moves
-            self.moves = []
+        if self._count_unflooded_colors(flooded) + len(moves) > self.max_moves:
+            return
+
+        if len(flooded) == self.graph.node_count():
             raise SolutionFound(moves)
 
         valid_moves = set(self.graph.colors)
-        if self.moves:
-            valid_moves -= {self.moves[-1]}
+        if moves:
+            valid_moves -= {moves[-1]}
 
         move_tuples: list[tuple[int, int, set[int]]] = []
 
         for move in valid_moves:
-            newly_flooded = self._get_newly_flooded(move)
+            newly_flooded = self._get_newly_flooded(flooded, move)
             heuristic = len(newly_flooded)
             move_tuple = (move, heuristic, newly_flooded)
 
@@ -166,20 +169,15 @@ class GraphSinglePlayerSolver:
         move_tuples = sorted(move_tuples, key=lambda t: -t[1])
 
         for move, _, newly_flooded in move_tuples:
-            self.moves.append(move)
-            self.flooded |= newly_flooded
-            self._solve()
-            self.flooded -= newly_flooded
-            self.moves.pop()
+            self._solve(flooded | newly_flooded, copy(moves) + [move])
 
     def solve(self) -> int:
         self.max_moves = 80  # TODO Don't hardcode
         best_move = -1
 
         while True:
-            self.flooded = {self.start_node_id}
             try:
-                self._solve()
+                self._solve({self.start_node_id}, [])
             except SolutionFound as solution:
                 print(f"Found solution ({len(solution.moves)}): ", end="")
                 print(
