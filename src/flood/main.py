@@ -5,7 +5,7 @@ from flood.board import Board
 import typer
 
 from flood.players.base import BasePlayer
-from flood.players.graph import GraphPlayer
+from flood.players.graph.player import GraphPlayer
 from flood.players.greedy import GreedyPlayer
 from flood.players.random import RandomPlayer
 
