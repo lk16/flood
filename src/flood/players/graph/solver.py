@@ -16,7 +16,7 @@ class GraphSinglePlayerSolver:
         self.attempts = 0
 
     def _get_newly_flooded(self, flooded: BitSet, move: int) -> BitSet:
-        unflooded_color_set = BitSet(self.graph.color_sets[move] & ~flooded)
+        unflooded_color_set = BitSet(self.graph.colors[move] & ~flooded)
         after = BitSet(0)
         for node in unflooded_color_set:
             neighbours = self.graph.neighbours[node]
@@ -27,7 +27,7 @@ class GraphSinglePlayerSolver:
 
     def _count_unflooded_colors(self, flooded_bitset: BitSet) -> int:
         unflooded_colors = 0
-        for color_set in self.graph.color_sets:
+        for color_set in self.graph.colors:
             if color_set & ~flooded_bitset:
                 unflooded_colors += 1
 

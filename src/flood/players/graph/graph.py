@@ -110,12 +110,12 @@ class Graph:
         ]
 
         # color id -> bitset of node ids with that color
-        self.color_sets = [BitSet(0) for _ in range(max(colors) + 1)]
+        self.colors = [BitSet(0) for _ in range(max(colors) + 1)]
         for index, color in enumerate(colors):
-            self.color_sets[color] = BitSet(self.color_sets[color] | 1 << index)
+            self.colors[color] = BitSet(self.colors[color] | 1 << index)
 
     def node_count(self) -> int:
         return len(self.neighbours)
 
     def color_count(self) -> int:
-        return len(self.color_sets)
+        return len(self.colors)
