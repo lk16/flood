@@ -11,6 +11,18 @@ from flood.players.graph.graph import (
 )
 from flood.players.graph.solver import GraphSinglePlayerSolver
 
+"""
+TODO put more details
+cargo build --manifest-path src/flood/players/graph/Cargo.toml
+cargo build --manifest-path src/flood/players/graph/Cargo.toml --release
+
+set env var FLOOD_GRAPH_PLAYER_USE_RUST
+
+./src/flood/players/graph/target/debug/graph
+./src/flood/players/graph/target/release/graph
+
+"""
+
 
 class GraphPlayer(BasePlayer):
     def load_as_graph(self, board: Board) -> Graph:

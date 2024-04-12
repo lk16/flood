@@ -1,5 +1,10 @@
 from copy import copy
 import datetime
+import json
+import os
+
+from pathlib import Path
+import subprocess
 from flood.board import Board
 from flood.players.graph.graph import Graph
 from flood.players.graph.types import BitSet, SolutionFound
@@ -75,6 +80,9 @@ class GraphSinglePlayerSolver:
             self._solve(child_flooded, copy(moves) + [move])
 
     def solve(self) -> int:
+        if "FLOOD_GRAPH_PLAYER_USE_RUST" in os.environ:
+            return self._solve_with_rust()
+
         self.solve_start = datetime.datetime.now()
         self.attempts = 0
 
@@ -104,3 +112,37 @@ class GraphSinglePlayerSolver:
 
         assert best_move != -1
         return best_move
+
+    def _solve_with_rust(self) -> int:
+        executable = Path(__file__).parent / "target/release/graph"
+
+        if not executable.exists():
+            raise Exception(f"Rust executable was not found at {executable}")
+        node_ids = list(range(self.graph.node_count()))
+
+        arguments = {
+            "start": self.start_node_id,
+            "colors": [self.graph.get_color(node) for node in node_ids],
+            "neighbours": [self.graph.get_neighbour_list(node) for node in node_ids],
+        }
+
+        process = subprocess.Popen(
+            [executable, json.dumps(arguments)],
+            stdout=subprocess.PIPE,
+        )
+
+        assert process.stdout
+
+        while True:
+            raw_line = process.stdout.readline()
+            if raw_line == b"":
+                break
+
+            line = raw_line.decode()
+            print(line, end="")
+
+            if line.startswith("Solution:"):
+                return int(line.split(" ")[1])
+
+        # Unreachable
+        raise NotImplementedError
