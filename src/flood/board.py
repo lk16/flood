@@ -40,6 +40,9 @@ class Board:
         ]
         return Board(fields, rows)
 
+    def get_fields(self) -> list[int]:
+        return self.__fields
+
     def get_column_count(self) -> int:
         return len(self.__fields) // self.get_row_count()
 
