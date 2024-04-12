@@ -1,4 +1,5 @@
 from copy import copy
+import datetime
 from flood.board import Board
 from flood.players.base import BasePlayer
 
@@ -124,6 +125,10 @@ class GraphSinglePlayerSolver:
         self.start_node_id = start_node_id
         self.max_moves = 0
 
+        # to observe search speed
+        self.solve_start = datetime.datetime.now()
+        self.attempts = 0
+
     def _get_newly_flooded(self, flooded: set[int], move: int) -> set[int]:
         newly_flooded: set[int] = set()
 
@@ -142,6 +147,13 @@ class GraphSinglePlayerSolver:
         unflooded_colors = {self.graph.colors[node] for node in unflooded_nodes}
         return len(unflooded_colors)
 
+    def _print_speed(self) -> None:
+        seconds = (datetime.datetime.now() - self.solve_start).total_seconds()
+        speed = self.attempts / seconds
+        print(
+            f"{self.attempts:>10} attempts / {seconds:7.2f} sec = {speed:6.0f} attempts / sec"
+        )
+
     def _solve(self, flooded: set[int], moves: list[int]) -> None:
         if len(moves) > self.max_moves:
             return
@@ -151,6 +163,10 @@ class GraphSinglePlayerSolver:
 
         if len(flooded) == self.graph.node_count():
             raise SolutionFound(moves)
+
+        self.attempts += 1
+        if self.attempts % 10000 == 0:
+            self._print_speed()
 
         valid_moves = set(self.graph.colors)
         if moves:
@@ -172,7 +188,12 @@ class GraphSinglePlayerSolver:
             self._solve(flooded | newly_flooded, copy(moves) + [move])
 
     def solve(self) -> int:
-        self.max_moves = 80  # TODO Don't hardcode
+        self.solve_start = datetime.datetime.now()
+        self.attempts = 0
+
+        # TODO Don't hardcode
+        self.max_moves = 80
+
         best_move = -1
 
         while True:
@@ -193,9 +214,7 @@ class GraphSinglePlayerSolver:
             else:
                 break
 
-        # TODO remove
-        print("Solved!")
-        raise SystemExit
+        self._print_speed()
 
         assert best_move != -1
         return best_move
