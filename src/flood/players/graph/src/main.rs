@@ -238,10 +238,6 @@ impl GraphSinglePlayerSolver {
     }
 
     fn _solve(&mut self, unflooded: &BitSet) -> Option<Solution> {
-        if self.moves.len() > self.max_moves {
-            return None;
-        }
-
         if self.count_colors(unflooded) + self.moves.len() > self.max_moves {
             return None;
         }
