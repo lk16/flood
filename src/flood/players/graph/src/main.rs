@@ -45,6 +45,13 @@ impl BitSet {
         }
     }
 
+    fn reset(&mut self, offset: usize) {
+        self.check_bounds(offset);
+        unsafe {
+            self.reset_unchecked(offset);
+        }
+    }
+
     fn difference(&self, other: &BitSet) -> BitSet {
         let mut difference = BitSet::new();
         for index in 0..self.array_size() {
@@ -61,14 +68,6 @@ impl BitSet {
         intersection
     }
 
-    fn union(&self, other: &BitSet) -> BitSet {
-        let mut union = BitSet::new();
-        for index in 0..self.array_size() {
-            union.data[index] = self.data[index] | other.data[index]
-        }
-        union
-    }
-
     fn count_ones(&self) -> usize {
         self.data
             .iter()
@@ -83,6 +82,15 @@ impl BitSet {
             }
         }
         false
+    }
+
+    fn none(&self) -> bool {
+        for item in self.data.iter() {
+            if *item != 0 {
+                return false;
+            }
+        }
+        true
     }
 
     fn iter_ones(&self) -> BitSetIterator {
@@ -163,11 +171,12 @@ impl GraphSinglePlayerSolver {
         }
     }
 
-    fn get_newly_flooded(&self, flooded: &BitSet, mov: usize) -> BitSet {
-        let unflooded_color_set = self.graph.colors[mov].difference(flooded);
+    fn get_newly_flooded(&self, unflooded: &BitSet, mov: usize) -> BitSet {
+        let unflooded_color_set = self.graph.colors[mov].intersection(unflooded);
         let mut newly_flooded = BitSet::new();
         for node in unflooded_color_set.iter_ones() {
-            if self.graph.neighbours[node].intersection(flooded).any() {
+            // if any unflooded node of the move played has a neighbour that's unflooded
+            if self.graph.neighbours[node].difference(unflooded).any() {
                 unsafe {
                     newly_flooded.set_unchecked(node);
                 }
@@ -176,14 +185,14 @@ impl GraphSinglePlayerSolver {
         newly_flooded
     }
 
-    fn count_unflooded_colors(&self, flooded_bitset: &BitSet) -> usize {
-        let mut unflooded_colors = 0;
-        for color_set in &self.graph.colors {
-            if color_set.difference(flooded_bitset).count_ones() > 0 {
-                unflooded_colors += 1;
+    fn count_colors(&self, unflooded: &BitSet) -> usize {
+        let mut count = 0;
+        for color in &self.graph.colors {
+            if unflooded.intersection(color).any() {
+                count += 1;
             }
         }
-        unflooded_colors
+        count
     }
 
     fn print_speed(&self) {
@@ -203,10 +212,13 @@ impl GraphSinglePlayerSolver {
         self.max_moves = self.graph.node_count();
 
         loop {
-            let mut initial_flooded = BitSet::new();
-            initial_flooded.set(self.start_node_id);
+            let mut initial_unflooded = BitSet::new();
+            for node in 0..self.graph.node_count() {
+                initial_unflooded.set(node);
+            }
+            initial_unflooded.reset(self.start_node_id);
 
-            match self._solve(&initial_flooded) {
+            match self._solve(&initial_unflooded) {
                 Some(solution) => {
                     self.print_speed();
                     print!("Found solution ({}): ", solution.moves.len());
@@ -225,16 +237,16 @@ impl GraphSinglePlayerSolver {
         best_solution.unwrap()
     }
 
-    fn _solve(&mut self, flooded: &BitSet) -> Option<Solution> {
+    fn _solve(&mut self, unflooded: &BitSet) -> Option<Solution> {
         if self.moves.len() > self.max_moves {
             return None;
         }
 
-        if self.count_unflooded_colors(flooded) + self.moves.len() > self.max_moves {
+        if self.count_colors(unflooded) + self.moves.len() > self.max_moves {
             return None;
         }
 
-        if flooded.count_ones() == self.graph.node_count() as usize {
+        if unflooded.none() {
             let solution = Solution {
                 moves: self.moves.clone(),
             };
@@ -263,7 +275,7 @@ impl GraphSinglePlayerSolver {
         let mut move_tuples: Vec<(usize, usize, BitSet)> = vec![];
 
         for mov in valid_moves.iter_ones() {
-            let newly_flooded = self.get_newly_flooded(flooded, mov);
+            let newly_flooded = self.get_newly_flooded(unflooded, mov);
             let heuristic = newly_flooded.count_ones();
 
             if newly_flooded.any() {
@@ -275,7 +287,7 @@ impl GraphSinglePlayerSolver {
         move_tuples.sort_by(|a, b| b.1.cmp(&a.1));
 
         for (mov, _, newly_flooded) in move_tuples {
-            let child_flooded = flooded.union(&newly_flooded);
+            let child_flooded = unflooded.difference(&newly_flooded);
             self.moves.push(mov);
             if let Some(solution) = self._solve(&child_flooded) {
                 return Some(solution);
