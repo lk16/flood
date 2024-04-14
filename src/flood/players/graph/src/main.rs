@@ -20,21 +20,13 @@ impl BitSet {
         8 * std::mem::size_of_val(&self.data[0])
     }
 
-    fn check_offset(&self, offset: usize) {
-        if offset > self.array_size() * self.element_bit_size() {
-            panic!("Offset too big!")
-        }
-    }
-
     fn set(&mut self, offset: usize) {
-        self.check_offset(offset);
         let mask = 1 << (offset % self.element_bit_size());
         let index = offset / self.element_bit_size();
         self.data[index] |= mask;
     }
 
     fn reset(&mut self, offset: usize) {
-        self.check_offset(offset);
         let mask = 1 << (offset % self.element_bit_size());
         let index = offset / self.element_bit_size();
         self.data[index] &= !mask;
@@ -309,10 +301,13 @@ fn main() -> Result<()> {
         .iter()
         .map(|l| {
             let mut bitset = BitSet::new();
-            l.as_array()
-                .unwrap()
-                .iter()
-                .for_each(|i| bitset.set(i.as_u64().unwrap() as usize));
+            l.as_array().unwrap().iter().for_each(|i| {
+                let offset = i.as_u64().unwrap() as usize;
+                if offset > bitset.array_size() * bitset.element_bit_size() {
+                    panic!("Offset too big, consider resizing BitSet.")
+                }
+                bitset.set(offset);
+            });
             bitset
         })
         .collect::<Vec<_>>();
