@@ -4,12 +4,12 @@ use std::time::Instant;
 
 #[derive(Default)]
 struct BitSet {
-    data: [u64; 4],
+    data: [u64; 3],
 }
 
 impl BitSet {
     fn new() -> Self {
-        BitSet { data: [0; 4] }
+        BitSet { data: [0; 3] }
     }
 
     fn array_size(&self) -> usize {
@@ -20,16 +20,29 @@ impl BitSet {
         8 * std::mem::size_of_val(&self.data[0])
     }
 
-    fn set(&mut self, offset: usize) {
+    fn check_bounds(&self, offset: usize) {
+        if offset >= self.array_size() * self.element_bit_size() {
+            panic!("Offset is too big. Consider resizing BitSet!")
+        }
+    }
+
+    unsafe fn set_unchecked(&mut self, offset: usize) {
         let mask = 1 << (offset % self.element_bit_size());
         let index = offset / self.element_bit_size();
         self.data[index] |= mask;
     }
 
-    fn reset(&mut self, offset: usize) {
+    unsafe fn reset_unchecked(&mut self, offset: usize) {
         let mask = 1 << (offset % self.element_bit_size());
         let index = offset / self.element_bit_size();
         self.data[index] &= !mask;
+    }
+
+    fn set(&mut self, offset: usize) {
+        self.check_bounds(offset);
+        unsafe {
+            self.set_unchecked(offset);
+        }
     }
 
     fn difference(&self, other: &BitSet) -> BitSet {
@@ -154,12 +167,10 @@ impl GraphSinglePlayerSolver {
         let unflooded_color_set = self.graph.colors[mov].difference(flooded);
         let mut newly_flooded = BitSet::new();
         for node in unflooded_color_set.iter_ones() {
-            if self.graph.neighbours[node]
-                .intersection(flooded)
-                .count_ones()
-                > 0
-            {
-                newly_flooded.set(node);
+            if self.graph.neighbours[node].intersection(flooded).any() {
+                unsafe {
+                    newly_flooded.set_unchecked(node);
+                }
             }
         }
         newly_flooded
@@ -239,10 +250,14 @@ impl GraphSinglePlayerSolver {
 
         let mut valid_moves = BitSet::new();
         for node in 0..self.graph.color_count() {
-            valid_moves.set(node);
+            unsafe {
+                valid_moves.set_unchecked(node);
+            }
         }
         if let Some(&last_move) = self.moves.last() {
-            valid_moves.reset(last_move);
+            unsafe {
+                valid_moves.reset_unchecked(last_move);
+            }
         }
 
         let mut move_tuples: Vec<(usize, usize, BitSet)> = vec![];
@@ -292,7 +307,7 @@ fn main() -> Result<()> {
 
     let start = object.get_key_value("start").unwrap().1.as_i64().unwrap() as usize;
 
-    let neighbours: Vec<BitSet> = object
+    let neighbours = object
         .get_key_value("neighbours")
         .unwrap()
         .1
@@ -303,7 +318,7 @@ fn main() -> Result<()> {
             let mut bitset = BitSet::new();
             l.as_array().unwrap().iter().for_each(|i| {
                 let offset = i.as_u64().unwrap() as usize;
-                if offset > bitset.array_size() * bitset.element_bit_size() {
+                if offset >= bitset.array_size() * bitset.element_bit_size() {
                     panic!("Offset too big, consider resizing BitSet.")
                 }
                 bitset.set(offset);
