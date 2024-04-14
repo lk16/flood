@@ -111,6 +111,7 @@ class GraphSinglePlayerSolver:
             else:
                 break
 
+        self._print_speed()
         assert best_moves is not None
         return best_moves
 
